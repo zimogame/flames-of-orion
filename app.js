@@ -335,6 +335,22 @@ function renderGarage(){
   $qq('[data-act="pdf"]').forEach(b=>b.onclick=()=>genPDF(b.dataset.uid));
   $qq('[data-act="del"]').forEach(b=>b.onclick=()=>delUnit(b.dataset.uid));
   $qq('[data-act="edit"]').forEach(b=>b.onclick=()=>editUnit(b.dataset.uid));
+  $qq('[data-act="add-credits"]').forEach(b=>b.onclick=()=>addCredits(b.dataset.uid));
+}
+
+function addCredits(uid) {
+  const u = S.garage.find(x => x.id === uid);
+  if (!u) return;
+  const input = prompt("Quanti crediti vuoi aggiungere al budget di questa unità?\\n(Puoi inserire un numero negativo per rimuoverne)", "10000");
+  if (!input) return;
+  const num = parseInt(input, 10);
+  if (isNaN(num)) {
+    alert("Valore non valido. Devi inserire un numero intero.");
+    return;
+  }
+  u.budget += num;
+  saveGarage();
+  render();
 }
 
 function unitCard(u){
@@ -354,6 +370,7 @@ function unitCard(u){
       </div>`).join('')}</div>
     <div class="uc-actions">
       <button class="btn btn-ghost btn-sm" data-act="edit" data-uid="${u.id}">✎ Modifica</button>
+      <button class="btn btn-ghost btn-sm" data-act="add-credits" data-uid="${u.id}">+ Crediti</button>
       <button class="btn btn-secondary btn-sm" data-act="pdf" data-uid="${u.id}">↓ Esporta PDF</button>
       <button class="btn btn-danger-g btn-sm" data-act="del" data-uid="${u.id}">✕ Elimina</button>
     </div>
