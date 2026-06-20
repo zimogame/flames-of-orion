@@ -263,7 +263,7 @@ function canBuy(unit,mi,type,itemId){
   if(remaining(unit)<it.cost) return {ok:false,why:'Budget insufficiente'};
   const st=computeStats(mech); const su=slotsUsed(mech);
   if(it.slots>0 && su+it.slots>st.md) return {ok:false,why:'Slot MD insufficienti'};
-  if(!it.rep && mech.modules.some(m=>m.type===type&&m.itemId===itemId)) return {ok:false,why:'Già equipaggiato'};
+  if(!it.rep && type === 'improvement' && mech.modules.some(m=>m.type===type&&m.itemId===itemId)) return {ok:false,why:'Già equipaggiato'};
   return {ok:true};
 }
 
