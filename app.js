@@ -116,6 +116,12 @@ const CHASSIS = {
   pesante: { id:'pesante', name:'Telaio Pesante', v:5, ac:4, ar:5, ps:7, lc:9,  md:5 }
 };
 
+const GROUND_FORCES = {
+  fanteria: { id:'fanteria', name:'Fanteria', v:4, ac:5, ar:6, ps:2, lc:5, md:2, cost:10000, cap:0.334 },
+  veicolo:  { id:'veicolo',  name:'Veicolo Terrestre', v:5, ac:4, ar:6, ps:4, lc:7, md:3, cost:30000, cap:0.5 },
+  velivolo: { id:'velivolo', name:'Velivolo', v:6, ac:4, ar:6, ps:3, lc:6, md:2, cost:25000, cap:0.5 }
+};
+
 // ════════════════════════════════════════════════════════════
 // § 2  STATO APPLICAZIONE
 // ════════════════════════════════════════════════════════════
@@ -204,7 +210,12 @@ function getItem(type,id){
   if(type==='melee')       return MELEE.find(x=>x.id===id);
 }
 
-function newMech(num){ return {id:uid(),num,chassis:'medio',codename:'',modules:[]}; }
+function newMech(num, mType='mech'){ return {id:uid(),num,mType,chassis:mType==='mech'?'medio':null,codename:'',modules:[]}; }
+
+function getBaseStats(mech){
+  if(mech.mType==='mech' || !mech.mType) return CHASSIS[mech.chassis||'medio'];
+  return GROUND_FORCES[mech.mType];
+}
 
 function newUnit(fid){
   const f=FACTIONS.find(x=>x.id===fid);
@@ -225,7 +236,7 @@ function newUnit(fid){
 }
 
 function computeStats(mech){
-  const b=CHASSIS[mech.chassis||'medio'];
+  const b=getBaseStats(mech);
   let v=b.v,ac=b.ac,ar=b.ar,ps=b.ps,lc=b.lc,md=b.md;
   for(const m of mech.modules){
     if(m.type!=='improvement') continue;
@@ -248,6 +259,20 @@ function slotsUsed(mech){
 
 function totalSpent(unit){
   let s=0;
+  let cap=4.0;
+  const sorted = [...unit.mechs].sort((a,b)=>{
+    const ca = a.mType==='mech'||!a.mType?50000:GROUND_FORCES[a.mType].cost;
+    const cb = b.mType==='mech'||!b.mType?50000:GROUND_FORCES[b.mType].cost;
+    return cb - ca;
+  });
+  for(const mech of sorted){
+    const mt = mech.mType||'mech';
+    const mCost = mt==='mech'?50000:GROUND_FORCES[mt].cost;
+    const mCap  = mt==='mech'?1.0:GROUND_FORCES[mt].cap;
+    if(cap >= mCap - 0.01) { cap -= mCap; }
+    else { s += mCost; cap=0; }
+  }
+
   for(const mech of unit.mechs)
     for(const m of mech.modules){
       if(!m.free){ const it=getItem(m.type,m.itemId); if(it) s+=it.cost; }
@@ -260,6 +285,7 @@ function remaining(unit){ return unit.budget-totalSpent(unit); }
 
 function canBuy(unit,mi,type,itemId){
   const mech=unit.mechs[mi]; const it=getItem(type,itemId); if(!it) return {ok:false,why:'Non trovato'};
+  if((mech.mType&&mech.mType!=='mech') && type==='melee') return {ok:false,why:'Non equipaggiabile su Forze di Terra'};
   if(remaining(unit)<it.cost) return {ok:false,why:'Budget insufficiente'};
   const st=computeStats(mech); const su=slotsUsed(mech);
   if(it.slots>0 && su+it.slots>st.md) return {ok:false,why:'Slot MD insufficienti'};
@@ -402,17 +428,41 @@ function fcCard(f,sel){
   </div>`;
 }
 
-/* STEP 2 — IDENTITÀ */
+/* STEP 2 — IDENTITÀ E COMPOSIZIONE */
 function step2(){
   const u=S.unit; const f=FACTIONS.find(x=>x.id===u.factionId);
+  const mechsCount = u.mechs.filter(m=>(m.mType||'mech')==='mech').length;
   return `
-  <div class="step-hdr"><h2 class="sect-title">IDENTITÀ DELL'<span>UNITÀ</span></h2>
-  <p class="sect-sub">Dai un nome alla tua Unità da Combattimento.</p></div>
+  <div class="step-hdr"><h2 class="sect-title">IDENTITÀ E <span>COMPOSIZIONE</span></h2>
+  <p class="sect-sub">Dai un nome all'Unità e componi il tuo roster. Devi avere almeno 2 Mech.</p></div>
   <div class="identity-grid">
     <div class="id-form">
       <label class="form-lbl" for="uname">NOME UNITÀ DA COMBATTIMENTO</label>
       <input type="text" id="uname" class="form-inp" placeholder="es. Ceneri di Orione, Ferro e Sangue, …" value="${esc(u.unitName)}" maxlength="50">
-      <p class="form-hint">Scegli un nome che rappresenti la tua unità nel sistema di Orione.</p>
+      
+      <div class="roster-builder">
+        <label class="form-lbl" style="margin-top:24px;">MODELLI NEL ROSTER</label>
+        <p class="form-hint" style="margin-bottom:12px">Fino a 4 slot Mech equivalenti sono gratuiti.</p>
+        <div class="roster-list">
+          ${u.mechs.map((m,idx)=>{
+            const isMech = (m.mType||'mech')==='mech';
+            const name = isMech ? 'Mech' : GROUND_FORCES[m.mType].name;
+            const cst = isMech ? 50000 : GROUND_FORCES[m.mType].cost;
+            return `<div class="roster-item">
+              <span class="type-badge ${isMech?'improvement':'ranged'}" style="width:120px;text-align:center">${name}</span>
+              <span class="roster-item-num">Modello ${m.num}</span>
+              <span class="summ-mod-cost" style="margin-left:auto">${fmt(cst)}</span>
+              ${(!isMech || mechsCount > 2) ? `<button class="btn btn-sm btn-danger-g" data-rm-model="${idx}" style="padding:4px 8px;margin-left:8px">✕</button>` : `<button class="btn btn-sm btn-ghost" disabled style="padding:4px 8px;margin-left:8px;opacity:0.5">Min 2</button>`}
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="roster-add-btns" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+          <button class="btn btn-sm btn-ghost" data-add-model="mech" style="flex:1;min-width:140px;border-color:#444">+ MECH</button>
+          <button class="btn btn-sm btn-ghost" data-add-model="veicolo" style="flex:1;min-width:140px;border-color:#444">+ VEICOLO</button>
+          <button class="btn btn-sm btn-ghost" data-add-model="velivolo" style="flex:1;min-width:140px;border-color:#444">+ VELIVOLO</button>
+          <button class="btn btn-sm btn-ghost" data-add-model="fanteria" style="flex:1;min-width:140px;border-color:#444">+ FANTERIA</button>
+        </div>
+      </div>
     </div>
     <div class="fc-summary" style="--fc:${f.color};--fcr:${f.rgb}">
       <div class="fcs-head"><span class="fcs-icon">${f.icon}</span>
@@ -431,13 +481,13 @@ function step2(){
       </div>
       <div class="fcs-budget">
         <span class="budget-label">BUDGET DISPONIBILE</span>
-        <span class="budget-amount">${fmt(u.budget)}</span>
+        <span class="budget-amount ${remaining(u)<0?'over':''}">${fmt(remaining(u))}</span>
       </div>
     </div>
   </div>
   <div class="nav-row">
     <button class="btn btn-ghost" id="btn-prev">← Indietro</button>
-    <button class="btn btn-primary" id="btn-next">AVANTI →</button>
+    <button class="btn btn-primary" id="btn-next" ${remaining(u)<0?'disabled':''}>AVANTI →</button>
   </div>`;
 }
 
@@ -458,11 +508,13 @@ function step3(){
 function mechCard(u,mech,mi){
   const open=S.openMech===mi;
   const st=computeStats(mech); const su=slotsUsed(mech);
+  const isMech = (mech.mType||'mech')==='mech';
+  const title = isMech ? `MECH ${mech.num}` : `${GROUND_FORCES[mech.mType].name.toUpperCase()} ${mech.num}`;
   return `
   <div class="mc-card ${open?'open':''}" id="mc-${mi}">
     <div class="mc-hdr" data-toggle="${mi}" role="button" tabindex="0">
       <div class="mc-hdr-left">
-        <span class="mech-num-badge">MECH ${mech.num}</span>
+        <span class="mech-num-badge">${title}</span>
         <span class="mc-codename ${mech.codename?'':'unnamed'}">${esc(mech.codename)||'Nessun nome assegnato'}</span>
       </div>
       <div class="mc-hdr-right">
@@ -476,9 +528,10 @@ function mechCard(u,mech,mi){
 
 function mechSummary(mech,st){
   const mods=mech.modules;
-  const cname=CHASSIS[mech.chassis||'medio'].name;
+  const isMech = (mech.mType||'mech')==='mech';
+  const cname = isMech ? CHASSIS[mech.chassis||'medio'].name : null;
   return `<div class="mc-summary">
-    <div style="margin-bottom:6px"><span class="badge-chassis">${cname}</span></div>
+    ${isMech ? `<div style="margin-bottom:6px"><span class="badge-chassis">${cname}</span></div>` : ''}
     <div class="stats-tiny">
       <span>V:${st.v}</span><span>AC:${st.ac}+</span><span>AR:${st.ar}+</span>
       <span>PS:${st.ps}</span><span>LC:${st.lc}</span><span>MD:${st.md}</span>
@@ -490,15 +543,16 @@ function mechSummary(mech,st){
 
 function mechBody(u,mech,mi,st,su){
   const roll=S.rolls[mi];
+  const isMech = (mech.mType||'mech')==='mech';
   return `<div class="mc-body">
-    <div class="cdn-section">
+    ${isMech ? `<div class="cdn-section">
       <div class="subsect">CLASSE DI TELAIO</div>
       <div class="chassis-selector">
         ${Object.values(CHASSIS).map(c=>`
           <button class="chassis-btn ${mech.chassis===c.id?'active':''}" data-chassis="${c.id}" data-cmi="${mi}">${c.name}</button>
         `).join('')}
       </div>
-    </div>
+    </div>` : ''}
     <div class="cdn-section">
       <div class="subsect">NOME IN CODICE</div>
       <div class="cdn-input-row">
@@ -666,12 +720,14 @@ function step4(){
 
 function summMech(mech){
   const st=computeStats(mech); const su=slotsUsed(mech);
-  const cname=CHASSIS[mech.chassis||'medio'].name;
+  const isMech = (mech.mType||'mech')==='mech';
+  const cname = isMech ? CHASSIS[mech.chassis||'medio'].name : GROUND_FORCES[mech.mType].name;
+  const title = isMech ? `MECH ${mech.num}` : `${cname.toUpperCase()} ${mech.num}`;
   return `<div class="summ-mech">
     <div class="summ-mech-hdr">
-      <span class="mech-num-badge">MECH ${mech.num}</span>
+      <span class="mech-num-badge">${title}</span>
       <span class="summ-mech-name">${esc(mech.codename)||'Senza nome'}</span>
-      <span class="badge-chassis">${cname}</span>
+      ${isMech ? `<span class="badge-chassis">${cname}</span>` : ''}
       <span class="slot-badge" style="margin-left:auto">${su}/${st.md} MD</span>
     </div>
     <div class="stats-row">
@@ -701,6 +757,17 @@ function $qq(s){ return document.querySelectorAll(s); }
 function bindWizard(){
   $q('#btn-next')?.addEventListener('click',goNext);
   $q('#btn-prev')?.addEventListener('click',goPrev);
+  $qq('[data-rm-model]')?.forEach(b=>b.onclick=()=>{
+    S.unit.mechs.splice(+b.dataset.rmModel, 1);
+    S.unit.mechs.forEach((m,i)=>m.num=i+1);
+    render();
+  });
+  $qq('[data-add-model]')?.forEach(b=>b.onclick=()=>{
+    const mt = b.dataset.addModel;
+    const num = S.unit.mechs.length + 1;
+    S.unit.mechs.push(newMech(num, mt));
+    render();
+  });
   $q('#btn-back-garage')?.addEventListener('click',()=>{S.view='garage';render();});
   $q('#btn-save')?.addEventListener('click',saveUnit);
   $q('#uname')?.addEventListener('input',e=>S.unit.unitName=e.target.value);
@@ -732,6 +799,10 @@ function selFaction(fid){
 
 function goNext(){
   if(S.step===1&&!S.unit) return;
+  if(S.step===2){
+    const mechsCount = S.unit.mechs.filter(m=>(m.mType||'mech')==='mech').length;
+    if(mechsCount < 2) { alert("Devi avere almeno 2 Mech nell'Unità!"); return; }
+  }
   if(S.step<4){ S.step++; S.openMech=null; render(); window.scrollTo(0,0); }
 }
 function goPrev(){
@@ -826,11 +897,13 @@ function genPDF(uid){
     if(y>250&&i>0){ doc.addPage(); pageNum++; y=26; addHeader(pageNum); }
 
     // Mech header bar
-    const cname=CHASSIS[mech.chassis||'medio'].name;
+    const isMech = (mech.mType||'mech')==='mech';
+    const cname = isMech ? CHASSIS[mech.chassis||'medio'].name : GROUND_FORCES[mech.mType].name;
+    const title = isMech ? `MECH ${mech.num}  —  ${mech.codename||'Senza Nome'} (${cname})` : `${cname.toUpperCase()} ${mech.num}  —  ${mech.codename||'Senza Nome'}`;
     doc.setFillColor(15,15,30); doc.rect(ML,y,W-ML*2,9,'F');
     doc.setDrawColor(fr,fg_,fb); doc.setLineWidth(0.4); doc.rect(ML,y,W-ML*2,9,'S');
     doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(fr,fg_,fb);
-    doc.text(`MECH ${mech.num}  —  ${mech.codename||'Senza Nome'} (${cname})`,ML+3,y+6.5);
+    doc.text(title,ML+3,y+6.5);
     doc.setFontSize(7); doc.setTextColor(140,140,160);
     doc.text(`${su} / ${st.md} slot MD`,W-ML-3,y+6.5,{align:'right'});
     y+=12;

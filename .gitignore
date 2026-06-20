@@ -1,4 +1,5 @@
 *.pdf
 *.txt
+*.json
 garage.json
 __pycache__/
