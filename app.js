@@ -110,6 +110,12 @@ const TABLE_B = [
   ['Batteria',   'Unità',      'Camminatore', 'Arma',        'Fantasma',    'Giavellotto']
 ];
 
+const CHASSIS = {
+  leggero: { id:'leggero', name:'Telaio Leggero', v:7, ac:4, ar:6, ps:4, lc:12, md:3 },
+  medio:   { id:'medio',   name:'Telaio Medio',   v:6, ac:4, ar:6, ps:6, lc:10, md:4 },
+  pesante: { id:'pesante', name:'Telaio Pesante', v:5, ac:4, ar:5, ps:7, lc:9,  md:5 }
+};
+
 // ════════════════════════════════════════════════════════════
 // § 2  STATO APPLICAZIONE
 // ════════════════════════════════════════════════════════════
@@ -198,7 +204,7 @@ function getItem(type,id){
   if(type==='melee')       return MELEE.find(x=>x.id===id);
 }
 
-function newMech(num){ return {id:uid(),num,codename:'',modules:[]}; }
+function newMech(num){ return {id:uid(),num,chassis:'medio',codename:'',modules:[]}; }
 
 function newUnit(fid){
   const f=FACTIONS.find(x=>x.id===fid);
@@ -219,7 +225,8 @@ function newUnit(fid){
 }
 
 function computeStats(mech){
-  let v=6,ac=4,ar=6,ps=6,lc=10,md=4;
+  const b=CHASSIS[mech.chassis||'medio'];
+  let v=b.v,ac=b.ac,ar=b.ar,ps=b.ps,lc=b.lc,md=b.md;
   for(const m of mech.modules){
     if(m.type!=='improvement') continue;
     switch(m.itemId){
@@ -469,7 +476,9 @@ function mechCard(u,mech,mi){
 
 function mechSummary(mech,st){
   const mods=mech.modules;
+  const cname=CHASSIS[mech.chassis||'medio'].name;
   return `<div class="mc-summary">
+    <div style="margin-bottom:6px"><span class="badge-chassis">${cname}</span></div>
     <div class="stats-tiny">
       <span>V:${st.v}</span><span>AC:${st.ac}+</span><span>AR:${st.ar}+</span>
       <span>PS:${st.ps}</span><span>LC:${st.lc}</span><span>MD:${st.md}</span>
@@ -482,6 +491,14 @@ function mechSummary(mech,st){
 function mechBody(u,mech,mi,st,su){
   const roll=S.rolls[mi];
   return `<div class="mc-body">
+    <div class="cdn-section">
+      <div class="subsect">CLASSE DI TELAIO</div>
+      <div class="chassis-selector">
+        ${Object.values(CHASSIS).map(c=>`
+          <button class="chassis-btn ${mech.chassis===c.id?'active':''}" data-chassis="${c.id}" data-cmi="${mi}">${c.name}</button>
+        `).join('')}
+      </div>
+    </div>
     <div class="cdn-section">
       <div class="subsect">NOME IN CODICE</div>
       <div class="cdn-input-row">
@@ -649,10 +666,12 @@ function step4(){
 
 function summMech(mech){
   const st=computeStats(mech); const su=slotsUsed(mech);
+  const cname=CHASSIS[mech.chassis||'medio'].name;
   return `<div class="summ-mech">
     <div class="summ-mech-hdr">
       <span class="mech-num-badge">MECH ${mech.num}</span>
       <span class="summ-mech-name">${esc(mech.codename)||'Senza nome'}</span>
+      <span class="badge-chassis">${cname}</span>
       <span class="slot-badge" style="margin-left:auto">${su}/${st.md} MD</span>
     </div>
     <div class="stats-row">
@@ -694,6 +713,12 @@ function bindWizard(){
   $qq('[data-tab]').forEach(t=>t.onclick=()=>{ S.shopTab=t.dataset.tab; render(); });
   $qq('[data-buy]').forEach(b=>{ if(!b.disabled) b.onclick=()=>doBuy(+b.dataset.buy,b.dataset.type,b.dataset.iid); });
   $qq('[data-rm]').forEach(b=>b.onclick=()=>{ S.unit.mechs[+b.dataset.rm].modules.splice(+b.dataset.idx,1); render(); });
+  $qq('[data-chassis]').forEach(b=>b.onclick=()=>{
+    const mi=+b.dataset.cmi; const nid=b.dataset.chassis;
+    const mech=S.unit.mechs[mi]; const su=slotsUsed(mech);
+    if(su > CHASSIS[nid].md) { alert(`Impossibile selezionare il ${CHASSIS[nid].name}: hai già equipaggiato moduli che occupano ${su} slot MD, ma questo telaio ne supporta solo ${CHASSIS[nid].md}. Vendi qualche modulo prima di cambiare.`); return; }
+    mech.chassis=nid; render();
+  });
   $qq('[data-bammo]').forEach(b=>{ if(!b.disabled) b.onclick=()=>buyAmmo(+b.dataset.bammo,+b.dataset.ridx,b.dataset.aid,false); });
   $qq('[data-rma]').forEach(b=>b.onclick=()=>{ const m=S.unit.mechs[+b.dataset.rma].modules[+b.dataset.idx]; m.ammoId=null; m.ammoFree=false; render(); });
   $qq('[data-mercs-mod]').forEach(b=>b.onclick=()=>applyMercsMod(+b.dataset.mercsMod));
@@ -801,10 +826,11 @@ function genPDF(uid){
     if(y>250&&i>0){ doc.addPage(); pageNum++; y=26; addHeader(pageNum); }
 
     // Mech header bar
+    const cname=CHASSIS[mech.chassis||'medio'].name;
     doc.setFillColor(15,15,30); doc.rect(ML,y,W-ML*2,9,'F');
     doc.setDrawColor(fr,fg_,fb); doc.setLineWidth(0.4); doc.rect(ML,y,W-ML*2,9,'S');
     doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(fr,fg_,fb);
-    doc.text(`MECH ${mech.num}  —  ${mech.codename||'Senza Nome'}`,ML+3,y+6.5);
+    doc.text(`MECH ${mech.num}  —  ${mech.codename||'Senza Nome'} (${cname})`,ML+3,y+6.5);
     doc.setFontSize(7); doc.setTextColor(140,140,160);
     doc.text(`${su} / ${st.md} slot MD`,W-ML-3,y+6.5,{align:'right'});
     y+=12;
