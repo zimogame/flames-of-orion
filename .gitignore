@@ -1,3 +1,4 @@
-flames_of_orion.txt
+*.pdf
+*.txt
 garage.json
 __pycache__/
