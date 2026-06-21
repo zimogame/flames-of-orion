@@ -311,7 +311,7 @@ function renderModeSelect() {
   $app.innerHTML = `
   <div class="app-header">
     <div class="app-logo">
-      <span class="flame-icon">🔥</span>
+      <span class="flame-icon"></span>
       <div><h1 class="logo-title">FLAMES OF ORION</h1><span class="logo-sub">SELEZIONA MODALITÀ</span></div>
     </div>
   </div>
@@ -350,8 +350,8 @@ function renderGarage(){
   $app.innerHTML=`
   <div class="app-header">
     <div class="app-logo">
-      <span class="flame-icon">🔥</span>
-      <div><h1 class="logo-title">FLAMES OF ORION</h1><span class="logo-sub">MECH BUILDER — MODALITÀ VETERANO</span></div>
+      <span class="flame-icon"></span>
+      <div><h1 class="logo-title">FLAMES OF ORION</h1><span class="logo-sub">MECH BUILDER</span></div>
     </div>
     <div class="header-actions">
       <button class="btn btn-ghost btn-sm" id="btn-import" title="Importa garage da file JSON">📂 Importa JSON</button>
@@ -433,7 +433,7 @@ function renderWizard(){
   $app.innerHTML=`
   <div class="app-header">
     <div class="app-logo">
-      <span class="flame-icon">🔥</span>
+      <span class="flame-icon"></span>
       <div><h1 class="logo-title">FLAMES OF ORION</h1><span class="logo-sub">CREA UNITÀ DA COMBATTIMENTO</span></div>
     </div>
     ${S.unit?`<div class="budget-display"><span class="budget-label">CREDITI DISPONIBILI</span><span class="budget-amount ${rem<0?'over':''}">${fmt(rem)}</span></div>`:''}

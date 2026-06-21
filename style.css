@@ -39,10 +39,19 @@ h1,h2,h3,h4,h5 { font-family: 'Orbitron', monospace; font-weight: 700; letter-sp
   backdrop-filter: blur(14px);
 }
 .app-logo { display: flex; align-items: center; gap: 12px; }
-.flame-icon { font-size: 26px; filter: drop-shadow(0 0 12px rgba(255,107,26,.8)); animation: flamePulse 2.5s ease-in-out infinite; }
+.flame-icon {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: rgba(6,6,16,1); /* Dark center */
+  border: 2px solid #ff6b1a; /* Orange halo edge */
+  box-shadow: 0 0 12px rgba(255,107,26,.8), inset 0 0 8px rgba(255,107,26,.5);
+  animation: flamePulse 2.5s ease-in-out infinite;
+}
 @keyframes flamePulse {
-  0%,100% { filter: drop-shadow(0 0 10px rgba(255,107,26,.7)); }
-  50%      { filter: drop-shadow(0 0 22px rgba(255,160,60,1)); }
+  0%,100% { box-shadow: 0 0 10px rgba(255,107,26,.7), inset 0 0 6px rgba(255,107,26,.4); }
+  50%      { box-shadow: 0 0 22px rgba(255,160,60,1), inset 0 0 12px rgba(255,160,60,.8); }
 }
 .logo-title { font-size: .95rem; color: #ff6b1a; text-shadow: 0 0 20px rgba(255,107,26,.5); line-height:1; }
 .logo-sub { display:block; font-size:.58rem; color:#555577; letter-spacing:.16em; font-family:'Rajdhani',sans-serif; margin-top:2px; }
