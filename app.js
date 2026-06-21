@@ -882,7 +882,11 @@ function goNext(){
   if(S.step<4){ S.step++; S.openMech=null; render(); window.scrollTo(0,0); }
 }
 function goPrev(){
-  if(S.step>1){ S.step--; S.openMech=null; render(); window.scrollTo(0,0); }
+  if(S.unit && S.unit.mode === 'rapido' && S.step === 2){
+    S.view = 'mode_select'; S.unit = null; render(); window.scrollTo(0,0);
+  } else if(S.step>1){ 
+    S.step--; S.openMech=null; render(); window.scrollTo(0,0); 
+  }
 }
 
 function doRoll(mi){
