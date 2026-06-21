@@ -1033,18 +1033,19 @@ function genPDF(uid){
         const costo=m.free?'GRATUITO':fmt(it.cost);
         const nome=a?`${it.name}  [${a.tag}]`:it.name;
         const effetto=(it.fx||'').substring(0,90)+(it.fx&&it.fx.length>90?'…':'');
-        return [tl,nome,slots,costo,effetto];
+        const danno=m.type==='improvement'?'':(it.dmg||'—');
+        return [tl,nome,danno,slots,costo,effetto];
       });
       doc.autoTable({
         startY:y,
-        head:[['TIPO','MODULO / ARMA','SLOT','COSTO','EFFETTO / SPECIALE']],
+        head:[['TIPO','MODULO / ARMA','DANNO','SLOT','COSTO','EFFETTO / SPECIALE']],
         body:rows,
         theme:'striped',
         margin:{left:ML,right:ML},
         headStyles:{fillColor:[30,30,55],textColor:[fr,fg_,fb],fontSize:7,fontStyle:'bold'},
         bodyStyles:{fillColor:[10,10,22],textColor:[200,200,210],fontSize:7.5},
         alternateRowStyles:{fillColor:[16,16,32]},
-        columnStyles:{0:{cellWidth:18},1:{cellWidth:58,fontStyle:'bold'},2:{cellWidth:14,halign:'center'},3:{cellWidth:24,halign:'right'},4:{cellWidth:'auto'}},
+        columnStyles:{0:{cellWidth:18},1:{cellWidth:48,fontStyle:'bold'},2:{cellWidth:14,halign:'center'},3:{cellWidth:14,halign:'center'},4:{cellWidth:20,halign:'right'},5:{cellWidth:'auto'}},
       });
       y=doc.lastAutoTable.finalY+5;
     } else {
