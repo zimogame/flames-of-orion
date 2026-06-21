@@ -33,9 +33,16 @@ const FACTIONS = [
   {
     id:'lost', name:'I PERDUTI & I DANNATI', sub:'Ribelli della Zona Statica', color:'#cc2200', rgb:'204,34,0', icon:'☠',
     desc:'Resti di un settore che si è rifiutato di abbandonare la propria casa nella Zona Statica. Il loro equipaggiamento e i Mech sono logori e malandati. Alimentati da determinazione e ingegno, sono diventati avversari formidabili. Orione è la loro casa e non hanno alcuna intenzione di andarsene.',
-    benName:'FORZA ATTRAVERSO LA SOFFERENZA',
     benDesc:'In gioco: quando un modello viene distrutto da un nemico, assegna a uno dei tuoi modelli rimanenti +1 AC per la sua prossima attivazione.',
     budgetBonus:0
+  },
+  {
+    id:'rapido', name:'GIOCO RAPIDO', sub:'Nessuna Fazione', color:'#ffaa00', rgb:'255,170,0', icon:'⚡',
+    desc:'Unità creata con regole di Gioco Rapido. Nessun bonus o fazione.',
+    benName:'NESSUN BENEFICIO',
+    benDesc:'In questa modalità non ottieni benefici di Fazione.',
+    budgetBonus:-125000,
+    hidden: true
   }
 ];
 
@@ -298,7 +305,45 @@ function canBuy(unit,mi,type,itemId){
 // ════════════════════════════════════════════════════════════
 
 const $app=document.getElementById('app');
-function render(){ $app.innerHTML=''; if(S.view==='garage') renderGarage(); else renderWizard(); }
+function render(){ $app.innerHTML=''; if(S.view==='garage') renderGarage(); else if(S.view==='mode_select') renderModeSelect(); else renderWizard(); }
+
+function renderModeSelect() {
+  $app.innerHTML = `
+  <div class="app-header">
+    <div class="app-logo">
+      <span class="flame-icon">🔥</span>
+      <div><h1 class="logo-title">FLAMES OF ORION</h1><span class="logo-sub">SELEZIONA MODALITÀ</span></div>
+    </div>
+  </div>
+  <div class="main-wrap" style="max-width:800px;margin:40px auto;text-align:center;">
+    <h2 class="sect-title" style="margin-bottom:30px">Scegli la modalità di creazione</h2>
+    <div style="display:flex;gap:20px;justify-content:center;">
+      <div class="fc-card" style="--fc:#ffaa00;--fcr:255,170,0;flex:1;cursor:pointer;" onclick="selectMode('rapido')">
+        <div class="fc-top"><span class="fc-icon" style="font-size:3rem">⚡</span><div class="fc-names"><div class="fc-name" style="font-size:1.5rem">GIOCO RAPIDO</div></div></div>
+        <p class="fc-desc" style="margin-top:15px;font-size:1rem;">Nessuna Fazione. Budget limitato a 25.000¢. Moduli scelti casualmente gratuiti per i Mech.</p>
+      </div>
+      <div class="fc-card" style="--fc:#0088ff;--fcr:0,136,255;flex:1;cursor:pointer;" onclick="selectMode('veterano')">
+        <div class="fc-top"><span class="fc-icon" style="font-size:3rem">🎖️</span><div class="fc-names"><div class="fc-name" style="font-size:1.5rem">VETERANO</div></div></div>
+        <p class="fc-desc" style="margin-top:15px;font-size:1rem;">Scegli una Fazione. Budget di 150.000¢. Personalizza tutto l'equipaggiamento.</p>
+      </div>
+    </div>
+    <button class="btn btn-ghost" style="margin-top:30px" onclick="S.view='garage';render();">← Torna al Garage</button>
+  </div>`;
+}
+
+window.selectMode = function(mode) {
+  S.view = 'wizard';
+  S.rolls = {}; S.openMech = null;
+  if(mode === 'rapido') {
+    S.step = 2;
+    S.unit = newUnit('rapido');
+    S.unit.mode = 'rapido';
+  } else {
+    S.step = 1;
+    S.unit = null;
+  }
+  render();
+};
 
 /* ── GARAGE ── */
 function renderGarage(){
@@ -341,14 +386,15 @@ function renderGarage(){
 function addCredits(uid) {
   const u = S.garage.find(x => x.id === uid);
   if (!u) return;
-  const input = prompt("Quanti crediti vuoi aggiungere al budget di questa unità?\\n(Puoi inserire un numero negativo per rimuoverne)", "10000");
-  if (!input) return;
+  const rem = remaining(u);
+  const input = prompt(`Fondi attualmente in deposito: ${rem}¢\\n\\nInserisci il NUOVO SALDO da impostare nel deposito:`, rem);
+  if (input === null || input.trim() === '') return;
   const num = parseInt(input, 10);
   if (isNaN(num)) {
     alert("Valore non valido. Devi inserire un numero intero.");
     return;
   }
-  u.budget += num;
+  u.budget = totalSpent(u) + num;
   saveGarage();
   render();
 }
@@ -356,10 +402,14 @@ function addCredits(uid) {
 function unitCard(u){
   const f=FACTIONS.find(x=>x.id===u.factionId);
   const rem=remaining(u);
+  const isRapido = u.mode === 'rapido';
   return `
   <div class="unit-card" style="--fc:${f.color}">
     <div class="uc-head">
-      <span class="faction-badge">${f.icon} ${f.name}</span>
+      <div style="display:flex;gap:4px">
+        <span class="faction-badge">${f.icon} ${f.name}</span>
+        ${isRapido ? '<span class="faction-badge" style="background:#ffaa00;color:#000;">⚡ GIOCO RAPIDO</span>' : '<span class="faction-badge" style="background:#0088ff;color:#fff;">🎖️ VETERANO</span>'}
+      </div>
       <div class="uc-budget"><span class="uc-budget-lbl">RIMANENTI</span><span class="uc-budget-val ${rem<0?'over':''}">${fmt(rem)}</span></div>
     </div>
     <div class="uc-name ${u.unitName?'':'no-name'}">${esc(u.unitName)||'Unità Senza Nome'}</div>
@@ -370,7 +420,7 @@ function unitCard(u){
       </div>`).join('')}</div>
     <div class="uc-actions">
       <button class="btn btn-ghost btn-sm" data-act="edit" data-uid="${u.id}">✎ Modifica</button>
-      <button class="btn btn-ghost btn-sm" data-act="add-credits" data-uid="${u.id}">+ Crediti</button>
+      <button class="btn btn-ghost btn-sm" data-act="add-credits" data-uid="${u.id}">💰 Deposito</button>
       <button class="btn btn-secondary btn-sm" data-act="pdf" data-uid="${u.id}">↓ Esporta PDF</button>
       <button class="btn btn-danger-g btn-sm" data-act="del" data-uid="${u.id}">✕ Elimina</button>
     </div>
@@ -420,7 +470,7 @@ function step1(){
   return `
   <div class="step-hdr"><h2 class="sect-title">SCEGLI LA <span>FAZIONE</span></h2>
   <p class="sect-sub">La fazione definisce background e bonus iniziali della tua Unità da Combattimento.</p></div>
-  <div class="faction-grid">${FACTIONS.map(f=>fcCard(f,f.id===selId)).join('')}</div>
+  <div class="faction-grid">${FACTIONS.filter(f=>!f.hidden).map(f=>fcCard(f,f.id===selId)).join('')}</div>
   <div class="nav-row">
     <button class="btn btn-ghost" id="btn-back-garage">← Garage</button>
     <button class="btn btn-primary" id="btn-next" ${!selId?'disabled':''}>AVANTI →</button>
@@ -589,6 +639,15 @@ function mechBody(u,mech,mi,st,su){
       <div class="subsect">MODULI EQUIPAGGIATI <span style="color:#ff6b1a;font-size:.6rem;">(${su}/${st.md} SLOT)</span></div>
       ${mech.modules.length?`<div class="eq-list">${mech.modules.map((m,idx)=>eqMod(m,mi,idx)).join('')}</div>`
       :'<p class="empty-eq">Nessun modulo. Usa il Mercato Nero qui sotto per acquistare armi e miglioramenti.</p>'}
+      ${u.mode==='rapido' ? `
+      <div class="rapido-rolls" style="background:rgba(255,170,0,0.1); border:1px solid #ffaa00; border-radius:4px; padding:10px; margin-bottom:12px;">
+        <div style="font-size:0.8rem;color:#ffaa00;margin-bottom:8px;font-weight:bold;">⚡ TIRI GIOCO RAPIDO (MODULI GRATUITI)</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-sm btn-ghost" style="flex:1;border-color:#ffaa00;color:#ffaa00" onclick="rollFreeModule(${mi},'improvement')" ${su>=st.md?'disabled':''}>MIGLIORAMENTO</button>
+          <button class="btn btn-sm btn-ghost" style="flex:1;border-color:#ffaa00;color:#ffaa00" onclick="rollFreeModule(${mi},'ranged')" ${su>=st.md?'disabled':''}>ARMA DISTANZA</button>
+          <button class="btn btn-sm btn-ghost" style="flex:1;border-color:#ffaa00;color:#ffaa00" onclick="rollFreeModule(${mi},'melee')" ${su>=st.md?'disabled':''}>ARMA MISCHIA</button>
+        </div>
+      </div>` : ''}
       <div class="shop-box">
         <div class="shop-tabs">
           <button class="s-tab ${S.shopTab==='improvement'?'active':''}" data-tab="improvement" data-mi="${mi}">MIGLIORAMENTI</button>
@@ -838,6 +897,33 @@ function doBuy(mi,type,itemId){
   render();
 }
 
+window.rollFreeModule = function(mi, type) {
+  const u = S.unit; const mech = u.mechs[mi];
+  const st = computeStats(mech); const su = slotsUsed(mech);
+  if(su >= st.md) { alert("Slot MD esauriti!"); return; }
+  
+  let list = [];
+  if(type === 'improvement') list = IMPROVEMENTS;
+  else if(type === 'ranged') list = RANGED;
+  else list = MELEE;
+
+  const available = list.filter(it => {
+    if(it.slots > 0 && su + it.slots > st.md) return false;
+    if(mech.mType && mech.mType !== 'mech' && type === 'melee') return false;
+    if(!it.rep && type === 'improvement' && mech.modules.some(m => m.type === type && m.itemId === it.id)) return false;
+    return true;
+  });
+
+  if(available.length === 0) {
+    alert("Nessun modulo di questo tipo può essere equipaggiato al momento.");
+    return;
+  }
+
+  const rolled = available[Math.floor(Math.random() * available.length)];
+  mech.modules.push({id:uid(), type, itemId:rolled.id, free:true, ammoId:null, ammoFree:false});
+  render();
+};
+
 function buyAmmo(mi,modIdx,ammoId,isFree){
   const mod=S.unit.mechs[mi].modules[modIdx];
   if(!isFree){const a=AMMO.find(x=>x.id===ammoId); if(!a||remaining(S.unit)<a.cost) return;}
@@ -865,7 +951,7 @@ function saveUnit(){
   saveGarage(); S.view='garage'; S.unit=null; S.step=1; S.rolls={}; S.openMech=null; render();
 }
 
-function startNew(){ S.view='wizard'; S.step=1; S.unit=null; S.rolls={}; S.openMech=null; render(); }
+function startNew(){ S.view='mode_select'; render(); }
 
 function editUnit(uid){ const u=S.garage.find(x=>x.id===uid); if(!u) return; S.view='wizard'; S.step=1; S.unit=JSON.parse(JSON.stringify(u)); S.rolls={}; S.openMech=null; render(); }
 

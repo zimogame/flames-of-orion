@@ -3,39 +3,38 @@
 ![Flames of Orion](https://img.shields.io/badge/Game-Flames%20of%20Orion-ff6b1a?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Complete-00cc55?style=for-the-badge)
 
-Questa è una web app progettata per semplificare la creazione di un'**Unità da Combattimento** per il wargame di miniature *Flames of Orion*, nello specifico utilizzando le regole della **Modalità Veterano**.
-
-L'applicazione permette di comporre la propria unità rispettando le regole di fazione, il budget, le statistiche dei Mech e le configurazioni dei moduli (Armi a Distanza, Armi da Mischia, Miglioramenti e Munizioni Speciali), calcolando automaticamente tutto e generando le schede finali.
+Questa è una web app progettata per semplificare la creazione di un'**Unità da Combattimento** per il wargame di miniature *Flames of Orion*. L'app supporta la creazione rapida o dettagliata della propria squadra, permettendo di gestire budget, statistiche, slot e schede finali.
 
 🌍 **L'app è disponibile online e pronta all'uso qui:**  
 👉 [**Flames of Orion - Mech Builder**](https://zimogame.github.io/flames-of-orion/)
 
 ---
 
-## 🛠 Funzionalità
+## 🛠 Funzionalità Principali
 
-- **Wizard guidato**: Un processo passo-passo semplice e intuitivo.
-- **Supporto Fazioni**: Implementate tutte le 4 Fazioni base (*MERCS*, *Mega Corps*, *Casati Nobiliari*, *I Perduti & I Dannati*) con applicazione automatica dei loro bonus speciali.
-- **Generatore Nomi in Codice**: Generazione casuale del nome in codice dei Mech utilizzando la Tabella d66 del manuale, o inserimento manuale.
-- **Gestione Budget**: Calcolo in tempo reale dei crediti spesi e rimanenti.
-- **Controllo Slot MD**: Calcolo automatico degli slot modulo (MD) e validazione dei limiti per ogni Mech.
-- **Export in PDF**: Generazione di un documento pronto per la stampa contenente tutte le schede dei Mech dell'Unità da Combattimento.
-- **Salvataggio Locale**: L'applicazione salva automaticamente i progressi nel browser del tuo dispositivo.
-- **Importa / Esporta**: Puoi esportare il tuo intero Garage in un file `.json` per condividerlo con altri giocatori o per fare un backup, e importarlo su qualsiasi altro dispositivo.
+- **Modalità di Gioco Supportate**:
+  - ⚡ **Gioco Rapido**: Nessuna fazione, budget limitato (25.000¢) e moduli iniziali estratti casualmente (gratuiti) per entrare subito in azione.
+  - 🎖️ **Modalità Veterano**: Scegli la tua fazione (ognuna con bonus unici), ottieni un budget completo (150.000¢) e acquista liberamente il tuo equipaggiamento.
+- **Roster Dinamico (Forze di Terra)**: Crea non solo Mech, ma includi nel roster anche *Veicoli Terrestri*, *Velivoli* e *Fanteria*. L'app calcola automaticamente i 4 slot gratuiti base (ogni unità di terra ha un "peso" in slot ridotto rispetto ai Mech).
+- **Gestione Flessibile dei Crediti**: Tieni traccia dei fondi durante la campagna! Dal Garage puoi impostare manualmente il saldo attuale del *Deposito* della tua squadra (ad esempio a seguito di una perdita finanziaria o di un guadagno in-game).
+- **Generatore Nomi in Codice**: Generazione casuale del nome in codice dei modelli utilizzando la Tabella d66 del manuale, o inserimento manuale.
+- **Controllo Limiti e Slot MD**: Validazione automatica dell'equipaggiamento, blocco delle armi da mischia per le Forze di Terra e conteggio degli slot Modulo Dati (MD) massimi in tempo reale.
+- **Export PDF Automatico**: Generazione con un clic di un PDF pronto per la stampa contenente tutte le schede dei modelli dell'Unità da Combattimento.
+- **Importa / Esporta**: Puoi salvare le unità in locale, oppure esportare e importare l'intero Garage tramite file JSON.
 
 ---
 
 ## 📋 Come utilizzare l'app
 
 1. Clicca su **+ NUOVA UNITÀ** dal Garage.
-2. Scegli la tua **Fazione** in base ai bonus o al background che preferisci.
-3. Dai un nome alla tua intera **Unità da Combattimento**.
-4. Clicca sulle schede di ogni **Mech** per espanderle:
-   - Usa il pulsante **🎲 Tira** per generare un nome in codice.
-   - Sfoglia il mercato nero nelle schede **Miglioramenti**, **Armi a Distanza** e **Armi da Mischia** e aggiungi equipaggiamento al tuo Mech.
-   - Assegna (se desideri) le **Munizioni Speciali** alle armi a distanza.
-5. Controlla il **Riepilogo**. Se non hai sforato il budget e la configurazione ti piace, clicca su "Salva nel Garage".
-6. Dal Garage, clicca su **↓ Esporta PDF** per ottenere la scheda stampabile da usare in partita!
+2. Scegli se vuoi utilizzare le regole del **Gioco Rapido** o della **Modalità Veterano**.
+3. (Solo per Veterano) Scegli la tua **Fazione** in base ai bonus o al background che preferisci.
+4. Nello **Step Identità**: dai un nome all'Unità da Combattimento e personalizza il Roster aggiungendo Mech, Fanteria o Veicoli. Assicurati di avere sempre almeno 2 Mech!
+5. Nello **Step Loadout**, apri le schede di ogni modello per espanderle:
+   - Sfoglia il mercato nero nelle schede **Miglioramenti**, **Armi a Distanza** e **Armi da Mischia** e aggiungi equipaggiamento.
+   - *In Gioco Rapido*: usa i bottoni speciali in cima per ottenere equipaggiamento gratuito ed estratto casualmente.
+6. Controlla il **Riepilogo**. Se non hai sforato il budget e la configurazione ti piace, clicca su "Salva nel Garage".
+7. Dal Garage, potrai modificare l'Unità, **gestire i crediti** nel deposito in base ai risultati delle tue partite, oppure cliccare su **↓ Esporta PDF** per ottenere la scheda stampabile!
 
 ---
 
