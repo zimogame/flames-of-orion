@@ -152,15 +152,21 @@ function loadGarageLocal(){
 function saveGarage(){
   // 1. Salva subito in localStorage
   try{ localStorage.setItem('foi_v1',JSON.stringify(S.garage)); }catch(e){}
-  // 2. Invia al server (se disponibile)
+  
+  // 2. Se il server non è attivo, non facciamo chiamate
+  if (!S.serverOk) return;
+
+  // 3. Invia al server
   fetch('/api/garage',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify(S.garage)
-  }).then(r=>r.ok
-    ? showToast('💾 Garage salvato su file!')
-    : showToast('⚠ Errore salvataggio su file','warn')
-  ).catch(()=>showToast('📱 Salvato solo in localStorage','warn'));
+  }).then(r=>{
+    if(r.ok) showToast('💾 Garage salvato su file!');
+    else { S.serverOk = false; render(); }
+  }).catch(()=>{
+    S.serverOk = false; render();
+  });
 }
 
 // ── Toast notifiche ──
@@ -1075,7 +1081,15 @@ function genPDF(uid){
 // ════════════════════════════════════════════════════════════
 
 async function init(){
-  // Tenta di caricare dal server (garage.json su disco)
+  // Su GitHub Pages disabilitiamo il server backend per evitare errori 404 in console
+  if (window.location.hostname.includes('github.io')) {
+    loadGarageLocal();
+    S.serverOk = false;
+    render();
+    return;
+  }
+
+  // Tenta di caricare dal server (garage.json su disco) locale
   try{
     const r=await fetch('/api/garage');
     if(r.ok){
